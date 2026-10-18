@@ -1,5 +1,9 @@
 # Module 4: Agents and agentic workflows
 
+## Plain-language overview
+
+An agent is a model working in a loop with instructions, tools, and state. It chooses the next step based on what it learns. A workflow follows steps chosen in advance. Reliable applications often use fixed workflows around small, bounded agent decisions.
+
 ## Goal
 
 Build workflows that use tools and state reliably, with autonomy limited to what the task requires.
@@ -47,3 +51,22 @@ Pause before sending reports, changing data, or triggering external actions. Dis
 - Traces make decisions inspectable.
 - The user remains in control of consequential actions.
 
+## Common mistakes
+
+- Adding multiple agents before one agent is reliable.
+- Allowing an agent to continue without a stopping condition or budget.
+- Giving every agent every tool.
+- Confusing a persuasive explanation with a verified result.
+
+## Review questions
+
+1. When is a fixed workflow better than an agent?
+2. What evidence would justify splitting one agent into specialists?
+3. Which actions in an analytics agent should require approval?
+4. What should a trace reveal after a failed run?
+
+## References
+
+- [OpenAI Agents guide](https://developers.openai.com/api/docs/guides/agents)
+- [OpenAI Agents SDK](https://developers.openai.com/api/docs/guides/agents/sdk)
+- [OpenAI practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf)
