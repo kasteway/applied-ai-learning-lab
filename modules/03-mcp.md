@@ -49,6 +49,28 @@ Return structured content with units, calculation definitions, freshness timesta
 - Security assumptions are documented.
 - A test verifies that restricted actions are unavailable.
 
+## Worked example: an operational metrics MCP server
+
+The server can expose a small, read-only capability set:
+
+| MCP capability | Example | Why it fits |
+|---|---|---|
+| Tool | `compare_periods` | Performs a parameterized calculation |
+| Tool | `find_metric_drivers` | Runs a governed diagnostic query |
+| Resource | `metrics://definitions/service-level` | Readable reference information |
+| Resource | `metrics://freshness/current` | Current validation and refresh status |
+| Prompt | `regional-performance-review` | Reusable user-selected analysis template |
+
+The tool should return source version, calculation timestamp, units, filters, and data-freshness status along with the result. This lets the host explain where the answer came from.
+
+## Design exercise: resource or tool?
+
+Use a **resource** when the client mainly needs to read identified context. Use a **tool** when inputs trigger a calculation, query, or action. A metric definition is naturally a resource; comparing two periods is naturally a tool.
+
+## Practice exercise
+
+Draft the interface for a read-only MCP server without writing code. List its tools, resources, and prompts; define who may use each; identify untrusted inputs; and specify which fields must appear in its audit log. Then explain how the same server could be used by more than one AI host.
+
 ## Common mistakes
 
 - Assuming that a standard connection is automatically a safe connection.

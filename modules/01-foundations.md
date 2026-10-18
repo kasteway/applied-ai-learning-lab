@@ -50,6 +50,40 @@ Validate the output schema and add tests for missing metrics, malformed data, an
 - Logs record latency and failures.
 - The README explains limitations and business use.
 
+## Worked example: from scorecard to explanation
+
+Assume the input contains ten metrics split by global and regional performance. Before asking a model to explain anything, define the data contract:
+
+```json
+{
+  "period": "2026-09",
+  "metric": "service_level",
+  "global": {"actual": 84.2, "prior": 87.3, "target": 88.0},
+  "regions": [
+    {"name": "West", "actual": 78.1, "prior": 84.3},
+    {"name": "East", "actual": 89.0, "prior": 88.6}
+  ]
+}
+```
+
+The application should calculate exact changes in code. The model should interpret those validated calculations, identify patterns, and communicate them. This separation avoids asking a probabilistic model to perform work ordinary code can do exactly.
+
+The response contract might require `summary`, `observed_drivers`, `unsupported_hypotheses`, `confidence`, and `missing_data`. This forces the system to distinguish what the data shows from what still needs investigation.
+
+## Design decisions to practice
+
+| Decision | Better default | Reason |
+|---|---|---|
+| Calculation | Deterministic code | Exact, testable, and repeatable |
+| Explanation | Language model | Adapts complex findings to the audience |
+| Output shape | Validated schema | Easier to test, display, and reuse |
+| Missing evidence | Explicit abstention | Reduces invented explanations |
+| Secrets | Environment or secret manager | Keeps credentials out of code and logs |
+
+## Practice exercise
+
+Create three scorecards: normal performance, a clear regional decline, and missing regional data. Write the input and output schemas, then describe how the system should behave in each case. Test whether another person could determine which parts are calculated facts and which parts are model-generated explanation.
+
 ## Review questions
 
 1. What is inside a model's context window?

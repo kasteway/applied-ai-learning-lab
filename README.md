@@ -8,7 +8,7 @@ The guide is written from an analytics perspective: how to turn governed data, b
 
 **[Open the complete study guide](STUDY_GUIDE.md)** for a concise overview of the full applied AI system.
 
-Then use these topic notes when you want more detail:
+Then use the modules when you want to move from **understanding** to **application**. The study guide is the concise reference; each module adds a worked example, design decisions, common failure modes, and a practical exercise.
 
 | Topic | What you will understand | Study page |
 |---|---|---|
@@ -21,6 +21,14 @@ Then use these topic notes when you want more detail:
 | Evaluation | How to measure quality before and after release | [Evaluation](modules/05-evaluation.md) |
 | Security and governance | How to protect data, constrain actions, and preserve accountability | [Security](modules/06-security-deployment.md) |
 | Production and monitoring | How to operate a dependable AI application | [Production](modules/07-production.md) |
+
+### Study guide versus modules
+
+| Resource | Use it for | What it contains |
+|---|---|---|
+| **Complete study guide** | Fast learning and interview refreshers | Definitions, diagrams, comparisons, examples, and key resources in one page |
+| **Topic modules** | Deeper study and hands-on practice | Worked scenarios, implementation choices, failure analysis, exercises, and completion criteria |
+| **Roadmap** | Planning your learning sequence | Suggested order, milestones, and portfolio deliverables |
 
 ## The system in one picture
 

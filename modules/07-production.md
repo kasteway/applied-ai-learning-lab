@@ -53,6 +53,35 @@ For an operational metrics agent, compare the old workflow with the AI-assisted 
 - Owners, rollback steps, and incident procedures are documented.
 - Users understand limitations and how to report a problem.
 
+## Worked example: production scorecard
+
+Monitor the application with one view that connects technical behavior to operational value:
+
+| Category | Metric | Example decision |
+|---|---|---|
+| Quality | Supported-driver rate | Pause release if it falls below threshold |
+| Retrieval | Citation coverage | Reindex or adjust filters when coverage drops |
+| Tools | Successful diagnostic calls | Investigate schema or upstream-data failures |
+| Reliability | P95 response time | Route simple work to a faster model |
+| Cost | Cost per completed diagnosis | Adjust routing, caching, or context size |
+| Value | Median time to correct diagnosis | Compare with the Tableau-only workflow |
+
+## Change-management example
+
+When changing a model, prompt, tool schema, or retrieval setting:
+
+1. create a versioned candidate;
+2. run the full evaluation set;
+3. compare quality, latency, and cost with the current version;
+4. review critical failures;
+5. release gradually when possible;
+6. monitor traces and user feedback;
+7. roll back if agreed thresholds are violated.
+
+## Practice exercise
+
+Write a one-page runbook for a stale-scorecard incident. Include detection, user impact, immediate safe behavior, owner, upstream checks, communication, recovery verification, and the evaluation case you will add afterward.
+
 ## Common mistakes
 
 - Monitoring uptime while ignoring answer quality.

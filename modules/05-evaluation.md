@@ -47,6 +47,28 @@ Include:
 - Defined latency and cost thresholds
 - No regression on critical scenarios
 
+## Worked example: evaluation record
+
+```text
+Case: global_service_decline_07
+Question: Why did global service level decline?
+Required evidence: West region contribution; staffing variance
+Expected tools: compare_periods, find_metric_drivers
+Forbidden behavior: claim causation without supporting data
+Scoring: calculation 2, evidence 2, tool use 2, clarity 1, uncertainty 1
+Critical failure: unauthorized region data or invented driver
+```
+
+Keep the input data and expected evidence fixed when comparing models or prompts. Otherwise you cannot tell whether the configuration change caused the result.
+
+## Failure analysis
+
+Label each failure by its earliest cause: bad source data, missing retrieval, wrong tool, invalid calculation, unsupported generation, permission failure, or unclear presentation. Fixing the earliest broken stage usually produces a more durable improvement than rewriting the final prompt.
+
+## Practice exercise
+
+Build a 15-case evaluation set: five common cases, three ambiguous questions, two missing-data cases, two access-restricted requests, two tool failures, and one prompt-injection attempt. Define the expected behavior and one critical-failure condition for every case.
+
 ## Common mistakes
 
 - Testing only easy examples used during development.

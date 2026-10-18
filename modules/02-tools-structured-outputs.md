@@ -59,6 +59,37 @@ The schema makes it easier to display the result in an HTML dashboard, store it,
 - Returning raw, oversized data when a focused result would be safer and clearer.
 - Retrying an action without considering whether the first attempt partly succeeded.
 
+## Worked example: a driver-analysis tool set
+
+Avoid one broad tool such as `analyze_everything`. Give each tool a clear contract:
+
+```text
+get_scorecard(period, scope)
+compare_periods(metric, current_period, prior_period, scope)
+find_metric_drivers(metric, period, dimension, limit)
+get_metric_definition(metric)
+```
+
+The first tool retrieves governed values. The second calculates change. The third ranks contributions across an approved dimension. The fourth retrieves the definition, owner, unit, and freshness rule. A model can combine them, but each individual result remains understandable and testable.
+
+### Example failure response
+
+```json
+{
+  "status": "error",
+  "error_code": "PERIOD_NOT_AVAILABLE",
+  "message": "October 2026 data has not completed validation.",
+  "available_through": "2026-09-30",
+  "retryable": false
+}
+```
+
+Useful errors help the model respond safely instead of guessing or repeatedly calling the same tool.
+
+## Practice exercise
+
+Design a schema for `find_metric_drivers`. Specify required inputs, allowed dimensions, maximum result count, user permissions, success output, and three error cases. Then write two examples: one request that should run automatically and one that should require approval.
+
 ## Review questions
 
 1. What does the model control during a tool call, and what does the application control?

@@ -55,6 +55,37 @@ Create an Operational Policy Assistant using public aviation or financial-regula
 - The model answers from general knowledge instead of evidence.
 - Updated documents are not reindexed.
 
+## Worked example: metric-definition assistant
+
+Suppose users need to understand ten global and regional metrics. Each indexed chunk should preserve fields such as:
+
+```text
+metric_id, metric_name, definition, formula, unit,
+owner, effective_date, region, source_url, access_group
+```
+
+A question about “service level in the West” should filter to authorized, current definitions before semantic ranking. The response should cite the source section and effective date. If two active documents conflict, the system should surface the conflict instead of silently choosing one.
+
+## Chunking decisions
+
+- Keep a definition, formula, and its exceptions together.
+- Split long procedures at meaningful headings rather than arbitrary character counts.
+- Repeat essential document metadata on every chunk.
+- Preserve tables carefully; flattened tables can lose the relationship between headers and values.
+- Test with real questions before deciding chunk size or overlap.
+
+## Retrieval debugging sequence
+
+1. Confirm the correct source exists and is current.
+2. Confirm the user is allowed to retrieve it.
+3. Inspect the search query and metadata filters.
+4. Check whether the relevant chunk appears in the top results.
+5. Only then inspect the generation prompt and final answer.
+
+## Practice exercise
+
+Choose five public policy or metric-definition documents. Create ten realistic questions with a known supporting passage. For each question, record whether the needed passage appears in the top three results. Change one chunking or retrieval setting at a time and explain the difference.
+
 ## RAG versus fine-tuning
 
 Use RAG to supply changing facts and source evidence. Use fine-tuning mainly to reinforce repeated behavior, format, or style. Many applications need RAG without fine-tuning.
