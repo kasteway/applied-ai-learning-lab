@@ -1,5 +1,7 @@
 # Module 2: Retrieval-Augmented Generation
 
+**Worked code:** See the [OpsAtlas retrieval walkthrough](../STUDY_GUIDE.md#from-opsatlas-retrieve-the-evidence) for the actual search function, citation path, and a clear account of what the offline demo does and does not implement.
+
 ## Plain-language overview
 
 RAG searches trusted information before asking the model to answer. It is useful when knowledge changes, belongs to an organization, or must be cited.

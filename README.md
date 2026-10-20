@@ -1,5 +1,7 @@
 # Applied AI Field Guide
 
+**Learn from one working project:** the [main study guide](STUDY_GUIDE.md#the-walkthrough-project-opsatlas-ai) uses OpsAtlas AI throughout. Its RAG, MCP, analytics, workflow, and evaluation sections include short excerpts of the real code with plain-English explanations, so you can study the concept and implementation together.
+
 A portable, plain-language reference for learning how modern AI applications work. Use it to study on the go, prepare for interviews, or quickly revisit a concept without searching through scattered notes and screenshots.
 
 The guide is written from an analytics perspective: how to turn governed data, business definitions, and operational metrics into reliable AI decision-support tools.

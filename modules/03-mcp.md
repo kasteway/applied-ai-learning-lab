@@ -1,5 +1,7 @@
 # Module 3: Model Context Protocol
 
+**Worked code:** See the [OpsAtlas MCP walkthrough](../STUDY_GUIDE.md#from-opsatlas-the-entire-mcp-idea-in-a-few-lines) for the actual server function, a line-by-line explanation, and what its client can request.
+
 ## Plain-language overview
 
 MCP gives AI applications a consistent way to discover and use external tools, readable resources, and reusable prompts. It is similar to using a standard connector shape across many systems.
@@ -51,7 +53,7 @@ Return structured content with units, calculation definitions, freshness timesta
 
 ## Worked example: an operational metrics MCP server
 
-The server can expose a small, read-only capability set:
+The server can expose a small, read-only capability set. OpsAtlas currently implements two tools; the resources and prompt below are design examples, not published OpsAtlas features:
 
 | MCP capability | Example | Why it fits |
 |---|---|---|

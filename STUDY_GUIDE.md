@@ -4,6 +4,18 @@ Use this as a self-contained reference for studying, interview preparation, and 
 
 > **How to use it:** Read one numbered section at a time. Study the diagram or example, review the bold terms, and answer the short “Can you explain it?” questions from memory.
 
+### The walkthrough project: OpsAtlas AI
+
+This guide uses **[OpsAtlas AI](https://github.com/kasteway/opsatlas-ai)** as one continuous example. It is a fictional customer-support operation with **synthetic data**. A leader asks, “Why did SLA attainment fall?” OpsAtlas calculates the KPI change, ranks region and issue-category contributions, retrieves relevant operating notes, and assembles a cited diagnostic brief. The short code excerpts below are from that repository, with explanations beside them, so you can study without keeping two pages open.
+
+```text
+Question → fixed coordinator → governed KPI calculations + local document retrieval
+         → measured findings + cited context + hypotheses to validate
+MCP server → separate read-only access to the same analytics calculations
+```
+
+**Know the boundary before an interview:** the published demo runs a fixed Python workflow. Its TF-IDF retriever is the *retrieval* part of a RAG design; it does not call an LLM to generate the final answer. Its MCP server exposes two real tools, but the offline coordinator calls the analytics object directly. The code shows where an AI client could connect; it does not claim a model currently chooses those tools. [Run the project](https://github.com/kasteway/opsatlas-ai#quick-start) or read its [project-specific guide](https://github.com/kasteway/opsatlas-ai/blob/main/STUDY_GUIDE.md) when you want more depth.
+
 ## Jump to a topic
 
 1. [The central idea: an AI application is a system](#1-the-central-idea-an-ai-application-is-a-system)
@@ -243,6 +255,20 @@ The model proposes a tool and arguments. The application decides whether the cal
 
 This result can be validated, displayed in an HTML dashboard, saved for audit, or passed to the next workflow step.
 
+### From OpsAtlas: keep arithmetic in code
+
+The published project uses a fixed Python workflow, so this is a normal function call rather than a model-selected tool call. The same calculation is also exposed through its MCP server in section 7.
+
+```python
+# src/opsatlas/analytics.py
+    def compare_latest(self, metric: str) -> Dict:
+        weeks = self.available_weeks()
+        previous = self.metric_value(metric, weeks[-2])
+        current = self.metric_value(metric, weeks[-1])
+```
+
+`metric_value()` applies an approved numerator and denominator. `compare_latest()` uses the two latest weeks, then returns a structured dictionary containing both values and their difference. **Why:** a language model should explain a checked calculation, not improvise the arithmetic. [See the full calculation](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/analytics.py).
+
 ### Good tool design
 
 - Give the tool one clear responsibility and a descriptive verb-based name.
@@ -331,6 +357,26 @@ flowchart LR
 5. Ask the model to answer only from the evidence.
 6. Cite the source and allow “not found” when evidence is missing.
 
+### From OpsAtlas: retrieve the evidence
+
+The complete RAG diagram above shows a model-generated answer. OpsAtlas currently implements the **local retrieval and citation** portion with Markdown notes and TF-IDF-style term matching; its offline brief is assembled by Python. It does not use embeddings or send the passages to an LLM.
+
+```python
+# src/opsatlas/retrieval.py
+    def search(self, query: str, limit: int = 4) -> List[Citation]:
+        ranked = sorted(
+            ((self._score(query, text), source, section, text)
+             for source, section, text in self.documents),
+            reverse=True,
+        )
+        return [Citation(source, section, text[:280])
+                for score, source, section, text in ranked[:limit] if score > 0]
+```
+
+**Read it in order:** `_score()` gives every section a relevance score; `sorted()` puts strong matches first; `[:limit]` keeps at most four; `Citation(...)` preserves the file and heading with a short excerpt. For the query “West Phoenix staffing,” the retrieval test expects `incident_log.md` first. **Why:** an analyst can inspect the supporting note instead of trusting an unsupported explanation. [See the retriever](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/retrieval.py) and [its test](https://github.com/kasteway/opsatlas-ai/blob/main/tests/test_retrieval.py).
+
+**Interview wording:** “I built an inspectable retrieval layer with source citations. Connecting those passages to a generative model would complete the generation stage of RAG; the offline demo intentionally stops short of that.”
+
 ### RAG versus fine-tuning
 
 | Need | Better starting point |
@@ -386,6 +432,40 @@ flowchart LR
 | **Resource** | Readable context identified by a URI | Metric dictionary or current scorecard definition |
 | **Prompt** | Reusable interaction template | “Create regional performance review” |
 
+### From OpsAtlas: the entire MCP idea in a few lines
+
+The real [OpsAtlas MCP server](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/mcp_server.py) is intentionally small. It **does not contain the KPI formula**. It gives an MCP client a standard way to discover and request approved calculations that already live in `analytics.py`.
+
+```python
+# src/opsatlas/mcp_server.py
+mcp = FastMCP("OpsAtlas Analytics")
+
+@mcp.tool()
+def compare_metric(metric: str) -> dict:
+    return analytics.compare_latest(metric)
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+| Code | Plain-English job |
+|---|---|
+| `FastMCP(...)` | Creates the server and gives it a name. |
+| `@mcp.tool()` | Registers `compare_metric` so a compatible client can discover it. |
+| `metric: str` | Declares the argument the client must provide. |
+| `analytics.compare_latest(metric)` | Calls ordinary Python that validates the metric and calculates the answer. |
+| `mcp.run()` | Starts the local server when you run this file as a program. |
+
+The second tool, `rank_drivers(metric, dimension, limit)`, follows the same pattern. Its dimension is checked against an allowlist in `analytics.py`. A client could request `compare_metric("sla_attainment")`. With the committed demo data, the underlying Python calculation returns:
+
+```json
+{"metric": "sla_attainment", "previous": 88.05, "current": 84.18, "change": -3.87}
+```
+
+That is a **3.87 percentage-point decline**, not a 3.87% relative decline. The actual dictionary also includes the two week dates. **MCP is the doorway; the analytics module is the calculation room.** The published server exposes tools only—not MCP resources or prompts. The offline coordinator does not call this MCP server; both paths reuse the same analytics logic.
+
+**Interview wording:** “I wrapped validated, read-only KPI calculations as discoverable MCP tools. That lets a compatible AI client request a comparison without giving the model direct access to raw data or letting it invent the calculation.”
+
 ### MCP versus an API
 
 An API is a general software interface. MCP is a protocol designed to make tools, resources, and prompts discoverable and usable by AI hosts. An MCP server often wraps existing APIs, databases, or files rather than replacing them.
@@ -436,6 +516,18 @@ flowchart TD
 - **Trace:** record of decisions, model calls, and tool calls.
 - **Human approval:** checkpoint before consequential actions.
 
+### From OpsAtlas: a bounded coordinator, not a model loop
+
+```python
+# src/opsatlas/agent.py
+        comparison = self.analytics.compare_latest(metric)
+        region_drivers = self.analytics.drivers(metric, "region", 3)
+        issue_drivers = self.analytics.drivers(metric, "issue_category", 3)
+        evidence = self.retriever.search(question + " " + metric.replace("_", " "), 4)
+```
+
+The coordinator selects a metric with simple rules, then always performs these fixed steps. It combines **measured** KPI/driver results with **retrieved** context and writes hypotheses that need checking. This is a workflow prototype, even though the class is named `OpsAtlasAgent`. A true model-driven agent would choose its next tool call based on observed results, with limits and evaluation. [Read the full coordinator](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/agent.py).
+
 ### A practical analytics agent
 
 1. Retrieve the metric definition.
@@ -471,6 +563,18 @@ Evaluation turns “the demo looked good” into repeatable evidence. A useful e
 | **Answer** | Correctness, completeness, clarity, usefulness |
 | **Workflow** | Task completion, approval compliance, safe recovery |
 | **Operations** | Latency, token usage, cost, errors, availability |
+
+### From OpsAtlas: test the boundary that matters
+
+```python
+# tests/test_retrieval.py
+results = KnowledgeRetriever(ROOT / "knowledge").search(
+    "West Phoenix staffing schedule adherence"
+)
+self.assertEqual(results[0].source, "incident_log.md")
+```
+
+This test checks that a realistic question retrieves the intended source. Other project tests check KPI calculations and that the final response separates measured findings from hypotheses. These are narrower than a full model evaluation, but they give you repeatable proof of what the offline prototype actually does. [See the tests](https://github.com/kasteway/opsatlas-ai/tree/main/tests).
 
 ### Evaluator types
 
