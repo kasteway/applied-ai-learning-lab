@@ -520,6 +520,16 @@ That is a **3.87 percentage-point decline**, not a 3.87% relative decline. The a
 
 An API is a general software interface. MCP is a protocol designed to make tools, resources, and prompts discoverable and usable by AI hosts. An MCP server often wraps existing APIs, databases, or files rather than replacing them.
 
+For a **runnable side-by-side example**, use [Agent Harness Lab's API vs MCP exercise](https://github.com/kasteway/agent-harness-lab/blob/main/STUDY_GUIDE.md#api-versus-mcp-watch-the-complete-round-trip), inspired by [KodeKloud's MCP vs API explanation](https://www.youtube.com/watch?v=kn6dxL53NkM). Its direct client calls a known HTTP endpoint. Its MCP client first discovers available tools, then calls `compare_sla`. Both paths reach the **same Python calculation** and return the same result. The comparison has no model: it isolates the integration roles so you can see what each layer does.
+
+```text
+Direct: application → HTTP client → API endpoint → calculation
+MCP:    application → MCP client → MCP server → calculation
+                  (discover tools, then call one)
+```
+
+The **model proposes** a tool call when an AI model is present; application code sends the request and handles the result. Neither an API specification nor MCP removes the need for an execution layer that manages credentials, permissions, errors, and approvals. A direct integration can be the simpler choice for one application and a few fixed operations; MCP becomes useful when several AI clients need the same discoverable capabilities.
+
 ### What MCP does not guarantee
 
 MCP does not automatically provide trustworthy data, correct calculations, secure authorization, or safe tool behavior. Use trusted servers, explicit authentication, least privilege, tool allowlists, argument validation, approval controls, and audit logs.
