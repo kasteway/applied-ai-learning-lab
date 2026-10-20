@@ -16,6 +16,18 @@ MCP server → separate read-only access to the same analytics calculations
 
 **Know the boundary before an interview:** the published demo runs a fixed Python workflow. Its TF-IDF retriever is the *retrieval* part of a RAG design; it does not call an LLM to generate the final answer. Its MCP server exposes two real tools, but the offline coordinator calls the analytics object directly. The code shows where an AI client could connect; it does not claim a model currently chooses those tools. [Run the project](https://github.com/kasteway/opsatlas-ai#quick-start) or read its [project-specific guide](https://github.com/kasteway/opsatlas-ai/blob/main/STUDY_GUIDE.md) when you want more depth.
 
+**Coverage key:** “Built” means runnable in OpsAtlas today; “next step” is a concept to learn, not a claimed feature.
+
+| Guide topic | OpsAtlas connection |
+|---|---|
+| System, analytics, structured output | Built: fixed coordinator, governed KPI math, typed response |
+| Models and prompting | Next step: no model call or prompt template in the offline demo |
+| Embeddings and RAG | Built: lexical retrieval with citations; next step: embeddings and model-generated answer |
+| MCP | Built: two read-only tools; the offline coordinator does not call them |
+| Agent workflows | Built: fixed workflow; next step: model-chosen tool loop |
+| Evaluation and governance | Built: tests, source citations, allowlisted metrics/dimensions; next step: full model eval and authentication |
+| Production | Built: browser API and basic health route; next step: tracing, monitoring, access controls |
+
 ## Jump to a topic
 
 1. [The central idea: an AI application is a system](#1-the-central-idea-an-ai-application-is-a-system)
@@ -147,6 +159,20 @@ Large context does not mean perfect recall. Important evidence can still be over
 - **Max output tokens:** caps response length and cost.
 - **Stop condition:** ends generation when a defined sequence or workflow condition is reached.
 
+### OpsAtlas connection: no model is called yet
+
+The offline project's [metric selector](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/agent.py) uses simple Python rules:
+
+```python
+if "first contact" in lowered or "fcr" in lowered:
+    return "first_contact_resolution"
+if "escalat" in lowered:
+    return "escalation_rate"
+return "sla_attainment"
+```
+
+**What it does:** routes a question to one approved metric. **Why it matters:** there are no tokens, context-window decisions, temperature settings, or model costs in this run. If you add an LLM later, compare it against this rule-based baseline on ambiguous questions before claiming it improves routing.
+
 ### Simple model-selection example
 
 Use a smaller model to classify a user request as “scorecard,” “policy,” or “forecast.” Use a stronger reasoning model only for ambiguous diagnosis. This routing can reduce cost and latency without lowering quality for simple cases.
@@ -196,6 +222,18 @@ Include information that changes the correct answer: definitions, time period, b
 **Weak:** “Analyze this dashboard and tell me what happened.”
 
 **Stronger:** “Using only the supplied ten-metric scorecard, compare October with September. Rank the top three regional drivers by absolute contribution. Separate observed evidence from possible explanation. If contribution cannot be calculated, identify the missing fields.”
+
+### OpsAtlas connection: a response contract before a prompt
+
+OpsAtlas does not send the sample prompt above to a model. Its [response type](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/models.py) makes the intended output distinction explicit:
+
+```python
+measured_findings: List[str]
+hypotheses: List[str]
+recommended_actions: List[str]
+```
+
+**What it does:** stores calculations, possible explanations, and next checks separately. **Why:** a later model prompt should preserve that separation rather than turn a staffing note into a proven cause. In this demo, Python fills these fields; prompt effectiveness and injection resistance have not been evaluated.
 
 ### Prompt injection versus ordinary prompting
 
@@ -312,6 +350,18 @@ The question “Why did customers wait longer?” could retrieve a passage title
 - **Metadata filter:** restricts results by fields such as region, effective date, owner, or access level.
 - **Hybrid search:** combines semantic vector search with keyword or lexical search.
 - **Reranking:** applies another model or scoring method to reorder initial results.
+
+### OpsAtlas connection: keyword scoring, not embeddings
+
+The [retriever](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/retrieval.py) scores shared words in the question and each document section:
+
+```python
+tf = document_terms[term] / total
+idf = math.log((1 + len(self.documents)) / (1 + self.document_frequency[term])) + 1
+score += query_count * tf * idf
+```
+
+**What it does:** rewards terms that are frequent in one section but uncommon across all sections. **Why it matters:** this is transparent and works offline, but “customer wait” may miss a passage that only says “queue delay.” An embedding or hybrid index is a future comparison to test, not something OpsAtlas currently uses.
 
 ### What embeddings do not do
 
@@ -628,6 +678,19 @@ flowchart LR
 
 Do not ask the prompt to enforce a permission that code can enforce. The application should check identity and authorization before retrieving data or executing a tool.
 
+### From OpsAtlas: enforce an allowlist in Python
+
+The [analytics layer](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/analytics.py) checks requested metrics and drill-down dimensions before calculating:
+
+```python
+if metric not in METRICS:
+    raise AnalyticsError("Unknown metric: %s" % metric)
+if dimension is not None and dimension not in ALLOWED_DIMENSIONS:
+    raise AnalyticsError("Dimension is not approved: %s" % dimension)
+```
+
+**What it does:** rejects unknown metric names and dimensions even if a client asks for them. **Why:** a prompt saying “only use approved metrics” is weaker than a code check. The [test](https://github.com/kasteway/opsatlas-ai/blob/main/tests/test_analytics.py) confirms an unapproved dimension is rejected. This is a demo allowlist, **not** user authentication or role-based access control.
+
 ### Governance questions
 
 1. Who owns the system and the underlying data?
@@ -648,6 +711,18 @@ Do not ask the prompt to enforce a permission that code can enforce. The applica
 ## 11. Production and observability
 
 A prototype becomes a product when it works repeatedly for real users, failures are visible, changes are controlled, and the system produces measurable value.
+
+### OpsAtlas connection: a health route is only a start
+
+The browser-facing [FastAPI app](https://github.com/kasteway/opsatlas-ai/blob/main/src/opsatlas/api.py) includes:
+
+```python
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+```
+
+**What it does:** tells a caller the process can answer a basic request. **What it cannot show:** whether source data is fresh, retrieval chose the right note, a diagnosis is correct, or users are actually helped. OpsAtlas has tests and a health route, but not production tracing, latency dashboards, alerting, or access controls. Those belong on its production roadmap.
 
 ### What to version
 
@@ -700,6 +775,12 @@ This produces a defensible value story without inventing a time-savings percenta
 > I build governed analytics products that turn operational data into faster, evidence-backed decisions. I use Python and structured data layers, interactive dashboards, custom GPTs and agents, retrieval, and controlled tools to help users understand what changed, which dimensions drove it, and what evidence supports the conclusion.
 
 This is applied AI because it combines business knowledge, data quality, analytics, model interaction, workflow design, evaluation, and adoption. Traditional machine learning remains valuable for forecasting, classification, anomaly detection, and scoring. Generative AI adds a natural-language reasoning and interaction layer around data, models, and tools.
+
+### OpsAtlas interview story in 30 seconds
+
+> “I built OpsAtlas as a safe, synthetic-data prototype for operational KPI diagnosis. Python calculates the change and ranks drivers; a local retriever brings in cited metric and incident context; a fixed coordinator separates measured findings from hypotheses. I also exposed two validated calculations through MCP. The current demo is intentionally offline and deterministic—an LLM narration layer, embeddings, authentication, and production monitoring are next steps to evaluate, not features I claim are already running.”
+
+This is the project-specific version of your broader career story above. It lets you describe **what you built**, **why each component exists**, and **where you would go next** without overstating the code.
 
 ### Quick interview distinctions
 
